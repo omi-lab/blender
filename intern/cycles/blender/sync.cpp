@@ -855,7 +855,9 @@ SessionParams BlenderSync::get_session_params(BL::RenderEngine &b_engine,
   params.experimental = (get_enum(cscene, "feature_set") != 0);
 
   /* Headless and background rendering. */
-  params.headless = BlenderSession::headless;
+  //ABLINOV
+  //params.headless = BlenderSession::headless;
+  params.headless = false;
   params.background = background;
 
   /* Device */

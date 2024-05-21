@@ -30,6 +30,7 @@
 #include "util/time.h"
 
 #include "blender/display_driver.h"
+#include "blender/display_driver_headless.h"
 #include "blender/output_driver.h"
 #include "blender/session.h"
 #include "blender/sync.h"
@@ -1080,8 +1081,13 @@ void BlenderSession::ensure_display_driver_if_needed()
     return;
   }
 
+  //ABLINOV
   if (headless) {
     /* No display needed for headless. */
+    unique_ptr<BlenderDisplayDriverHeadless> display_driver =
+        make_unique<BlenderDisplayDriverHeadless>();
+    session->set_display_driver(std::move(display_driver));
+    //b_engine.is_preview(true);
     return;
   }
 

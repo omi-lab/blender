@@ -23,6 +23,7 @@ set(SRC
   camera.cpp
   device.cpp
   display_driver.cpp
+  display_driver_headless.cpp
   image.cpp
   geometry.cpp
   light.cpp
@@ -45,6 +46,7 @@ set(SRC
   CCL_api.h
   device.h
   display_driver.h
+  display_driver_headless.h
   id_map.h
   image.h
   object_cull.h

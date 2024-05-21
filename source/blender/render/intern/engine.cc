@@ -1114,6 +1114,9 @@ bool RE_engine_render(Render *re, bool do_all)
   if (re->r.scemode & R_BUTS_PREVIEW) {
     engine->flag |= RE_ENGINE_PREVIEW;
   }
+
+  //ABLINOV
+  engine->flag |= RE_ENGINE_PREVIEW;
   engine->camera_override = re->camera_override;
 
   engine->resolution_x = re->winx;

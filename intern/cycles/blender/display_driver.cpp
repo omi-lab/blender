@@ -10,6 +10,7 @@
 #include "RE_engine.h"
 
 #include "blender/display_driver.h"
+#include "blender/display_driver_headless.h"
 
 #include "device/device.h"
 #include "util/log.h"
@@ -577,6 +578,14 @@ void BlenderDisplayDriver::update_end()
   GPU_fence_signal(gpu_upload_sync_);
 
   GPU_flush();
+
+  //ABLINOV
+  auto params = graphics_interop_get();
+  if(false && params.buffer_height && params.buffer_width) {
+    auto *buffer = map_texture_buffer();
+    write_buffer_to_image_file(buffer, params.buffer_width, params.buffer_height);
+    unmap_texture_buffer();
+  }
 
   gpu_context_disable();
 }
