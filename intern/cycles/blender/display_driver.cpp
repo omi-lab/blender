@@ -579,12 +579,15 @@ void BlenderDisplayDriver::update_end()
 
   GPU_flush();
 
-  //ABLINOV
-  auto params = graphics_interop_get();
-  if(false && params.buffer_height && params.buffer_width) {
-    auto *buffer = map_texture_buffer();
-    write_buffer_to_image_file(buffer, params.buffer_width, params.buffer_height);
-    unmap_texture_buffer();
+  if(false && ABLINOV_DEV) {
+    // this was used for incremental render output into image file, while blender
+    // is not in background mode. This done for tests. In practice we do not use it.
+    auto params = graphics_interop_get();
+    if(false && params.buffer_height && params.buffer_width) {
+      auto *buffer = map_texture_buffer();
+      write_buffer_to_image_file(buffer, params.buffer_width, params.buffer_height);
+      unmap_texture_buffer();
+    }
   }
 
   gpu_context_disable();

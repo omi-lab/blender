@@ -126,7 +126,33 @@ static PyObject *init_func(PyObject * /*self*/, PyObject *args)
   PyObject *path, *user_path;
   int headless;
 
-  if (!PyArg_ParseTuple(args, "OOi", &path, &user_path, &headless)) {
+  if(ABLINOV_DEV){
+    //ouput list of parameters from argumetns for debug
+    PyObject* it = PyObject_GetIter(args);
+    if(it){
+      while(PyObject* item = PyIter_Next(it)){
+        // if (PyUnicode_Check(item)) {
+        PyObject *str_obj = PyObject_Str(item);
+        if (str_obj != nullptr) {
+          const char *str = PyUnicode_AsUTF8(str_obj);
+          if (str != nullptr) {
+            fmt::print("ABlinov: Object: {}\n", str);
+          } else {
+            PyErr_Print();
+          }
+          Py_DECREF(str_obj);  // Decrease reference count for the string object
+        } else {
+          PyErr_Print();
+        }
+        // }
+        Py_DECREF(item);
+      }
+      Py_DECREF(it);
+    }
+  }
+
+  PyObject *one_more_parameter;
+  if (!PyArg_ParseTuple(args, "OOiO", &path, &user_path, &headless, &one_more_parameter)) {
     return nullptr;
   }
 

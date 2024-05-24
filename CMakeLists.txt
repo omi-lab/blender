@@ -1040,6 +1040,8 @@ set(PLATFORM_LINKFLAGS_DEBUG "")
 set(PLATFORM_LINKFLAGS_RELEASE "")
 set(PLATFORM_LINKFLAGS_EXECUTABLE "")
 
+add_compile_definitions(${DEVELOPER_DEFINES})
+
 if(NOT CMAKE_BUILD_TYPE MATCHES "Release")
   if(WITH_COMPILER_ASAN)
     if(NOT APPLE)
@@ -1936,6 +1938,7 @@ if(FIRST_RUN)
   info_cfg_text("Compiler Options:")
   info_cfg_option(WITH_BUILDINFO)
   info_cfg_option(WITH_OPENMP)
+  info_cfg_option(DEVELOPER_DEFINES)
 
   info_cfg_text("System Options:")
   info_cfg_option(WITH_INSTALL_PORTABLE)

@@ -60,13 +60,15 @@ bool
 BlenderDisplayDriverHeadless::update_begin(const Params &/*params*/, int width, int height) {
   width_ = width;
   height_ = height;
-  fmt::print(stderr, "ABlinov: update_begin() image dimension: {} {}", width, height);
+  if(ABLINOV_DEV) // test ouput
+    fmt::print(stderr, "ABlinov: update_begin() image dimension: {} {}", width, height);
   return true;
 }
 
 void
 BlenderDisplayDriverHeadless::update_end() {
-  fmt::print(stderr, "ABlinov: update_end()");
+  if(ABLINOV_DEV) // test ouput
+    fmt::print(stderr, "ABlinov: update_end()");
   write_buffer_to_image_file(buffer.data(), width_, height_);
 }
 

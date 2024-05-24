@@ -1115,8 +1115,13 @@ bool RE_engine_render(Render *re, bool do_all)
     engine->flag |= RE_ENGINE_PREVIEW;
   }
 
-  //ABLINOV
-  engine->flag |= RE_ENGINE_PREVIEW;
+  if(ABLINOV_DEV) {
+    // This need to activate display update to show incremental render results.
+    // in background mode we attach headless display and we need set update
+    // flag. This will trigger update calls for headless display to get incremental
+    // render results
+    engine->flag |= RE_ENGINE_PREVIEW;
+  }
   engine->camera_override = re->camera_override;
 
   engine->resolution_x = re->winx;
