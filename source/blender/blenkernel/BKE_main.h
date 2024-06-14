@@ -244,6 +244,10 @@ typedef struct Main {
   struct UniqueName_Map *name_map;
 
   struct MainLock *lock;
+
+#ifdef ABLINOV_DEV // call back to controll async render start from python side
+  void (*render_thread_started)(void);
+#endif
 } Main;
 
 /**

@@ -298,17 +298,63 @@ static void screen_render_single_layer_set(
   }
 }
 
+int screen_render_exec_aux(bContext *C, wmOperator *op, std::string sceneName );
+
+char const* render_layers[] = {
+  "SCShadowPass",
+  "SCPrimary",
+  "SCImageBackground",
+  nullptr
+};
+
+struct StateRecursive{
+  int counter = 1;
+  std::function<void()> screen_render_exec_aux;
+} stateRecursive;
+
 /* executes blocking render */
 static int screen_render_exec(bContext *C, wmOperator *op)
 {
-  Scene *scene = CTX_data_scene(C);
+  //ABLINOV exeprimenting to change scene for render
+  // Scene *scene = CTX_data_scene(C);
+  // CTX_data_scene_set(C,scene);
+  stateRecursive.screen_render_exec_aux = [C,op]()
+  {
+    if(render_layers[stateRecursive.counter])
+      screen_render_exec_aux(C, op, render_layers[stateRecursive.counter++]);
+  };
+
+  Main* bmain = CTX_data_main(C);
+  bmain->render_thread_started = []()
+  {
+    stateRecursive.screen_render_exec_aux();
+  };
+
+  return screen_render_exec_aux(C, op, "SCShadowPass");
+}
+
+int screen_render_exec_aux(bContext *C, wmOperator *op, std::string sceneName )
+{
+  Main *mainp = CTX_data_main(C);
+
+  Scene* scene{nullptr};
+  LISTBASE_FOREACH (Scene *, scene_iter, &mainp->scenes) {
+    if(scene_iter->id.name == sceneName){
+      scene = scene_iter;
+      break;
+    }
+  }
+  if(!scene)
+    return 0;
+
+  // CTX_data_scene_set(C,)
   RenderEngineType *re_type = RE_engines_find(scene->r.engine);
   ViewLayer *active_layer = CTX_data_view_layer(C);
   ViewLayer *single_layer = nullptr;
   Render *re;
   Image *ima;
   View3D *v3d = CTX_wm_view3d(C);
-  Main *mainp = CTX_data_main(C);
+
   const bool is_animation = RNA_boolean_get(op->ptr, "animation");
   const bool is_write_still = RNA_boolean_get(op->ptr, "write_still");
   struct Object *camera_override = v3d ? V3D_CAMERA_LOCAL(v3d) : nullptr;
@@ -346,25 +392,27 @@ static int screen_render_exec(bContext *C, wmOperator *op)
 
   RE_SetReports(re, op->reports);
 
-  if (is_animation) {
-    RE_RenderAnim(re,
-                  mainp,
-                  scene,
-                  single_layer,
-                  camera_override,
-                  scene->r.sfra,
-                  scene->r.efra,
-                  scene->r.frame_step);
-  }
-  else {
-    RE_RenderFrame(re,
-                   mainp,
-                   scene,
-                   single_layer,
-                   camera_override,
-                   scene->r.cfra,
-                   scene->r.subframe,
-                   is_write_still);
+  for(auto i=0; i<1; i++){
+    if (is_animation) {
+      RE_RenderAnim(re,
+                    mainp,
+                    scene,
+                    single_layer,
+                    camera_override,
+                    scene->r.sfra,
+                    scene->r.efra,
+                    scene->r.frame_step);
+    }
+    else {
+      RE_RenderFrame(re,
+                     mainp,
+                     scene,
+                     single_layer,
+                     camera_override,
+                     scene->r.cfra,
+                     scene->r.subframe,
+                     is_write_still);
+    }
   }
 
   RE_SetReports(re, nullptr);

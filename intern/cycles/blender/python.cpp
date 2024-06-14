@@ -25,6 +25,10 @@
 #include "util/tbb.h"
 #include "util/types.h"
 
+#ifdef ABLINOV_DEV
+#include "BKE_main.h"
+#endif
+
 #include "GPU_state.h"
 
 #ifdef WITH_OSL
@@ -126,7 +130,9 @@ static PyObject *init_func(PyObject * /*self*/, PyObject *args)
   PyObject *path, *user_path;
   int headless;
 
-  if(ABLINOV_DEV){
+#ifdef ABLINOV_DEV //parsing parameters from python in scripts\addons\cycles\engine.py:49
+                   // D:\omi\blender_dev_36_build\Debug\bin\3.6\scripts\addons\cycles\engine.py:49
+  {
     //ouput list of parameters from argumetns for debug
     PyObject* it = PyObject_GetIter(args);
     if(it){
@@ -150,6 +156,7 @@ static PyObject *init_func(PyObject * /*self*/, PyObject *args)
       Py_DECREF(it);
     }
   }
+#endif
 
   PyObject *one_more_parameter;
   if (!PyArg_ParseTuple(args, "OOiO", &path, &user_path, &headless, &one_more_parameter)) {
@@ -379,6 +386,12 @@ static PyObject *reset_func(PyObject * /*self*/, PyObject *args)
     return NULL;
 
   BlenderSession *session = (BlenderSession *)PyLong_AsVoidPtr(pysession);
+
+#ifdef ABLINOV_DEV //calling back: pydata->render_thread_started()
+  session->render_thread_started = [pydata=(Main *)PyLong_AsVoidPtr(pydata)](){
+    pydata->render_thread_started();
+  };
+#endif
 
   PointerRNA dataptr;
   RNA_main_pointer_create((Main *)PyLong_AsVoidPtr(pydata), &dataptr);

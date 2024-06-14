@@ -965,6 +965,7 @@ static void engine_render_view_layer(Render *re,
     re->engine->flag |= RE_ENGINE_CAN_DRAW;
     BLI_mutex_unlock(&engine->re->engine_draw_mutex);
 
+    //ABLINOV calling python: D:\omi\blender_dev_36_build\Debug\bin\3.6\scripts\addons\cycles\engine.py:86
     engine->type->render(engine, engine->depsgraph);
 
     BLI_mutex_lock(&engine->re->engine_draw_mutex);
@@ -1115,7 +1116,7 @@ bool RE_engine_render(Render *re, bool do_all)
     engine->flag |= RE_ENGINE_PREVIEW;
   }
 
-  if(ABLINOV_DEV) {
+  if(ABLINOV_DEV) {// activating flag to run preview for headless display
     // This need to activate display update to show incremental render results.
     // in background mode we attach headless display and we need set update
     // flag. This will trigger update calls for headless display to get incremental

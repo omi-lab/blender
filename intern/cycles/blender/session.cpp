@@ -30,7 +30,9 @@
 #include "util/time.h"
 
 #include "blender/display_driver.h"
+#ifdef ABLINOV_DEV
 #include "blender/display_driver_headless.h"
+#endif
 #include "blender/output_driver.h"
 #include "blender/session.h"
 #include "blender/sync.h"
@@ -437,7 +439,11 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
       scene->enable_update_stats();
     }
 
+    //ABLINOV_DEV start render in thread
     session->start();
+#ifdef ABLINOV_DEV //before wait to start other render session
+    render_thread_started();
+#endif
     session->wait();
 
     if (!b_engine.is_preview() && background && print_render_stats) {
@@ -1083,13 +1089,13 @@ void BlenderSession::ensure_display_driver_if_needed()
 
   if (headless) {
     /* No display needed for headless. */
-    if(ABLINOV_DEV){
-      // setting headless display for incremental render output
-      unique_ptr<BlenderDisplayDriverHeadless> display_driver =
-          make_unique<BlenderDisplayDriverHeadless>();
-      session->set_display_driver(std::move(display_driver));
-      //b_engine.is_preview(true);
-    }
+#ifdef ABLINOV_DEV // setting headless display
+    // setting headless display for incremental render output
+    unique_ptr<BlenderDisplayDriverHeadless> display_driver =
+        make_unique<BlenderDisplayDriverHeadless>();
+    session->set_display_driver(std::move(display_driver));
+    //b_engine.is_preview(true);
+#endif
     return;
   }
 

@@ -10,8 +10,9 @@
 #include "RE_engine.h"
 
 #include "blender/display_driver.h"
+#ifdef ABLINOV_DEV // header display_driver.h
 #include "blender/display_driver_headless.h"
-
+#endif
 #include "device/device.h"
 #include "util/log.h"
 #include "util/math.h"
@@ -579,7 +580,8 @@ void BlenderDisplayDriver::update_end()
 
   GPU_flush();
 
-  if(false && ABLINOV_DEV) {
+#ifdef ABLINOV_DEV // test output normally is off
+  if(false){
     // this was used for incremental render output into image file, while blender
     // is not in background mode. This done for tests. In practice we do not use it.
     auto params = graphics_interop_get();
@@ -589,6 +591,7 @@ void BlenderDisplayDriver::update_end()
       unmap_texture_buffer();
     }
   }
+#endif
 
   gpu_context_disable();
 }

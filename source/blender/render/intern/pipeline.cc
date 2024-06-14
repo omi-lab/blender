@@ -1753,9 +1753,27 @@ void RE_RenderFrame(Render *re,
 {
   render_callback_exec_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_INIT);
 
+#ifdef ABLINOV_DEV_OFF // testing switch to different scene to render may be we can do it later right here
+  for(auto i=0; i<1; i++){
+    LISTBASE_FOREACH (Scene *, scene_it, &bmain->scenes) {
+      // if(strcmp(scene_it->id.name,"SCPrimary") == 0)
+      //   break;
+      if(strcmp(scene_it->id.name,"SCImageBackground") == 0){
+        scene=scene_it;
+        break;
+      }
+    }
+  }
+#endif
+
   /* Ugly global still...
    * is to prevent preview events and signal subdivision-surface etc to make full resolution. */
+#ifdef ABLINOV_DEV // using G.is_rendering with counter
+  static int counter = 0;
+  G.is_rendering = bool(++counter);
+#else
   G.is_rendering = true;
+#endif
 
   scene->r.cfra = frame;
   scene->r.subframe = subframe;
@@ -1808,8 +1826,12 @@ void RE_RenderFrame(Render *re,
 
   render_pipeline_free(re);
 
+#ifdef ABLINOV_DEV // using G.is_rendering with counter
+  G.is_rendering = bool(--counter);
+#else
   /* UGLY WARNING */
   G.is_rendering = false;
+#endif
 }
 
 #ifdef WITH_FREESTYLE
