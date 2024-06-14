@@ -392,27 +392,25 @@ int screen_render_exec_aux(bContext *C, wmOperator *op, std::string sceneName )
 
   RE_SetReports(re, op->reports);
 
-  for(auto i=0; i<1; i++){
-    if (is_animation) {
-      RE_RenderAnim(re,
-                    mainp,
-                    scene,
-                    single_layer,
-                    camera_override,
-                    scene->r.sfra,
-                    scene->r.efra,
-                    scene->r.frame_step);
-    }
-    else {
-      RE_RenderFrame(re,
-                     mainp,
-                     scene,
-                     single_layer,
-                     camera_override,
-                     scene->r.cfra,
-                     scene->r.subframe,
-                     is_write_still);
-    }
+  if (is_animation) {
+    RE_RenderAnim(re,
+                  mainp,
+                  scene,
+                  single_layer,
+                  camera_override,
+                  scene->r.sfra,
+                  scene->r.efra,
+                  scene->r.frame_step);
+  }
+  else {
+    RE_RenderFrame(re,
+                   mainp,
+                   scene,
+                   single_layer,
+                   camera_override,
+                   scene->r.cfra,
+                   scene->r.subframe,
+                   is_write_still);
   }
 
   RE_SetReports(re, nullptr);
