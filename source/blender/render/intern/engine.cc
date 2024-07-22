@@ -1116,11 +1116,12 @@ bool RE_engine_render(Render *re, bool do_all)
     engine->flag |= RE_ENGINE_PREVIEW;
   }
 
-  if(ABLINOV_DEV) {// activating flag to run preview for headless display
-    // This need to activate display update to show incremental render results.
-    // in background mode we attach headless display and we need set update
-    // flag. This will trigger update calls for headless display to get incremental
-    // render results
+  if(ABLINOV_DEV) {// activating preview flag to speed up incremental render for headless display
+    // This is used to speedup display update to show incremental render results.
+    // in background mode we attach headless display and we set update
+    // flag. In theory this flag should inform render engine to increase performance
+    // for rendering and reduce qualtiy. In fact I did not found it is used by by cycle engine.
+    // but it can be used by blender while preparing different structures for cycle
     engine->flag |= RE_ENGINE_PREVIEW;
   }
   engine->camera_override = re->camera_override;

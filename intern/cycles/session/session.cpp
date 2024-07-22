@@ -753,4 +753,11 @@ void Session::process_full_buffer_from_disk(string_view filename)
   path_trace_->process_full_buffer_from_disk(filename);
 }
 
+//ABLINOV extra fuctionality to force update render in background render
+void Session::forceHeadless(bool value)
+{
+  render_scheduler_.forceHeadless(value);
+  params.headless = value;
+}
+
 CCL_NAMESPACE_END

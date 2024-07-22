@@ -50,6 +50,12 @@ void RenderScheduler::set_limit_samples_per_update(const int limit_samples)
   limit_samples_per_update_ = limit_samples;
 }
 
+//ABLINOV extra fuctionality to force update render in background render
+void RenderScheduler::forceHeadless(bool value)
+{
+  headless_=value;
+}
+
 void RenderScheduler::set_adaptive_sampling(const AdaptiveSampling &adaptive_sampling)
 {
   adaptive_sampling_ = adaptive_sampling;

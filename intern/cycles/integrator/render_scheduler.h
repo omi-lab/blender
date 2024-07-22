@@ -189,6 +189,9 @@ class RenderScheduler {
 
   void set_limit_samples_per_update(const int limit_samples);
 
+  //ABLINOV extra fuctionality to force update render in background render
+  void forceHeadless(bool value);
+
  protected:
   /* Check whether all work has been scheduled and time limit was not exceeded.
    *

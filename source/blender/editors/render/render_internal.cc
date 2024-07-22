@@ -298,56 +298,112 @@ static void screen_render_single_layer_set(
   }
 }
 
-int screen_render_exec_aux(bContext *C, wmOperator *op, std::string sceneName );
+int screen_render_exec_aux(bContext *C, wmOperator *op, Scene* scene);
 
-char const* render_layers[] = {
-  "SCShadowPass",
-  "SCPrimary",
-  "SCImageBackground",
-  nullptr
-};
+namespace {
+struct {
 
-struct StateRecursive{
+  char const* render_layers[3] = {
+    "SCShadowPass",
+    "SCPrimary",
+    nullptr
+  };
+
   int counter = 1;
-  std::function<void()> screen_render_exec_aux;
-} stateRecursive;
+  bContext *C= nullptr;
+  wmOperator *op = nullptr;
+
+  void reset(bContext *C_, wmOperator *op_)
+  {
+    C = C_;  op = op_;  counter = 0; stopRenderFlag = false;
+  }
+
+  int run_render()
+  {
+    Main *mainp = CTX_data_main(C);
+    while(const auto* sceneName = render_layers[counter++]){
+      LISTBASE_FOREACH (Scene *, scene_iter, &mainp->scenes) {
+        if(STREQ(scene_iter->id.name, sceneName)){
+          return screen_render_exec_aux(C, op, scene_iter);
+        }
+      }
+    }
+
+    //background render started, now running final render
+    return run_final_render();
+  }
+
+  void setStopRender()
+  {
+    stopRenderFlag = true;
+  }
+
+  int run_final_render()
+  {
+    Main *mainp = CTX_data_main(C);
+
+    auto image_update =[&]() { LISTBASE_FOREACH (Image *, image_iter, &mainp->images) {
+      std::cout << image_iter->filepath << std::endl;
+      if( std::strstr(image_iter->filepath, "primaryImage.png.primaryIntermediate.exr") ||
+          std::strstr(image_iter->filepath, "primaryImage.png.shadowPassIntermediate.exr") )
+      {
+        // newly generated images shall be reloaded
+        BKE_image_signal(mainp, image_iter, nullptr, IMA_SIGNAL_RELOAD);
+      }
+    }};
+
+    { // "ImageBackground" pass render
+      const auto* sceneName = "SCImageBackground";
+      LISTBASE_FOREACH (Scene *, scene_iter, &mainp->scenes) {
+        if(STREQ(scene_iter->id.name, sceneName)) {
+          while( !stopRenderFlag ){
+            image_update();
+            screen_render_exec_aux(C, op, scene_iter);            
+          }
+          break;
+        }
+      }
+    }
+
+    return OPERATOR_FINISHED;
+  }
+private:
+  bool stopRenderFlag = false;
+}
+
+renderSceneIterator;
+}
 
 /* executes blocking render */
 static int screen_render_exec(bContext *C, wmOperator *op)
 {
-  //ABLINOV exeprimenting to change scene for render
-  // Scene *scene = CTX_data_scene(C);
-  // CTX_data_scene_set(C,scene);
-  stateRecursive.screen_render_exec_aux = [C,op]()
-  {
-    if(render_layers[stateRecursive.counter])
-      screen_render_exec_aux(C, op, render_layers[stateRecursive.counter++]);
-  };
-
   Main* bmain = CTX_data_main(C);
-  bmain->render_thread_started = []()
-  {
-    stateRecursive.screen_render_exec_aux();
+
+#ifdef ABLINOV_DEV //renderSceneIterator to prepare layers for async render
+  bmain->maybe_one_more_render = [](bool continueFlag) {
+    if (continueFlag)
+      renderSceneIterator.run_render();
+    else
+      renderSceneIterator.setStopRender();
   };
 
-  return screen_render_exec_aux(C, op, "SCShadowPass");
+  renderSceneIterator.reset(C,op);
+  return renderSceneIterator.run_render();
+#else // synchronous render as it was before
+  bmain->maybe_one_more_render = nullptr;
+  Scene *scene = CTX_data_scene(C);
+  CTX_data_scene_set(C,scene);
+  return screen_render_exec_aux(C, op, scene);
+#endif
 }
 
-int screen_render_exec_aux(bContext *C, wmOperator *op, std::string sceneName )
+int screen_render_exec_aux(bContext *C, wmOperator *op, Scene* scene )
 {
-  Main *mainp = CTX_data_main(C);
 
-  Scene* scene{nullptr};
-  LISTBASE_FOREACH (Scene *, scene_iter, &mainp->scenes) {
-    if(scene_iter->id.name == sceneName){
-      scene = scene_iter;
-      break;
-    }
-  }
   if(!scene)
     return 0;
 
-  // CTX_data_scene_set(C,)
+  Main *mainp = CTX_data_main(C);
   RenderEngineType *re_type = RE_engines_find(scene->r.engine);
   ViewLayer *active_layer = CTX_data_view_layer(C);
   ViewLayer *single_layer = nullptr;

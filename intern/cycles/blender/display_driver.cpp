@@ -580,8 +580,8 @@ void BlenderDisplayDriver::update_end()
 
   GPU_flush();
 
-#ifdef ABLINOV_DEV // test output normally is off
-  if(false){
+#ifdef ABLINOV_DEV_OFF // test output
+  {
     // this was used for incremental render output into image file, while blender
     // is not in background mode. This done for tests. In practice we do not use it.
     auto params = graphics_interop_get();

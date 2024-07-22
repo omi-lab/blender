@@ -30,7 +30,7 @@
 #include "util/time.h"
 
 #include "blender/display_driver.h"
-#ifdef ABLINOV_DEV
+#ifdef ABLINOV_DEV // extra header for display_driver_headless.h
 #include "blender/display_driver_headless.h"
 #endif
 #include "blender/output_driver.h"
@@ -334,143 +334,200 @@ void BlenderSession::stamp_view_layer_metadata(Scene *scene, const string &view_
 
 void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
 {
-  b_depsgraph = b_depsgraph_;
 
-  if (session->progress.get_cancel()) {
-    update_status_progress();
-    return;
-  }
+  //scene->name;
+  auto task = [this, &b_depsgraph_](){
 
-  /* Create driver to write out render results. */
-  ensure_display_driver_if_needed();
-  session->set_output_driver(make_unique<BlenderOutputDriver>(b_engine));
+    b_depsgraph = b_depsgraph_;
 
-  session->full_buffer_written_cb = [&](string_view filename) { full_buffer_written(filename); };
+    if (session->progress.get_cancel()) {
+      update_status_progress();
+      return;
+    }
 
-  BL::ViewLayer b_view_layer = b_depsgraph.view_layer_eval();
+    /* Create driver to write out render results. */
+    ensure_display_driver_if_needed();
+    session->set_output_driver(make_unique<BlenderOutputDriver>(b_engine));
 
-  /* get buffer parameters */
-  const SessionParams session_params = BlenderSync::get_session_params(
-      b_engine, b_userpref, b_scene, background);
-  BufferParams buffer_params = BlenderSync::get_buffer_params(
-      b_v3d, b_rv3d, scene->camera, width, height);
+    session->full_buffer_written_cb = [&](string_view filename) { full_buffer_written(filename); };
 
-  /* temporary render result to find needed passes and views */
-  BL::RenderResult b_rr = b_engine.begin_result(0, 0, 1, 1, b_view_layer.name().c_str(), NULL);
-  BL::RenderResult::layers_iterator b_single_rlay;
-  b_rr.layers.begin(b_single_rlay);
-  BL::RenderLayer b_rlay = *b_single_rlay;
+    BL::ViewLayer b_view_layer = b_depsgraph.view_layer_eval();
 
-  {
-    thread_scoped_lock lock(draw_state_.mutex);
-    b_rlay_name = b_view_layer.name();
+    /* get buffer parameters */
+    const SessionParams session_params = BlenderSync::get_session_params(
+          b_engine, b_userpref, b_scene, background);
+    BufferParams buffer_params = BlenderSync::get_buffer_params(
+          b_v3d, b_rv3d, scene->camera, width, height);
 
-    /* Signal that the display pass is to be updated. */
-    draw_state_.last_pass_index = -1;
-  }
+    /* temporary render result to find needed passes and views */
+    BL::RenderResult b_rr = b_engine.begin_result(0, 0, 1, 1, b_view_layer.name().c_str(), NULL);
+    BL::RenderResult::layers_iterator b_single_rlay;
+    b_rr.layers.begin(b_single_rlay);
+    BL::RenderLayer b_rlay = *b_single_rlay;
 
-  /* Compute render passes and film settings. */
-  sync->sync_render_passes(b_rlay, b_view_layer);
+    {
+      thread_scoped_lock lock(draw_state_.mutex);
+      b_rlay_name = b_view_layer.name();
 
-  BL::RenderResult::views_iterator b_view_iter;
+      /* Signal that the display pass is to be updated. */
+      draw_state_.last_pass_index = -1;
+    }
 
-  int num_views = 0;
-  for (b_rr.views.begin(b_view_iter); b_view_iter != b_rr.views.end(); ++b_view_iter) {
-    num_views++;
-  }
+    /* Compute render passes and film settings. */
+    sync->sync_render_passes(b_rlay, b_view_layer);
 
-  int view_index = 0;
-  for (b_rr.views.begin(b_view_iter); b_view_iter != b_rr.views.end(); ++b_view_iter, ++view_index)
-  {
-    b_rview_name = b_view_iter->name();
+    BL::RenderResult::views_iterator b_view_iter;
 
-    buffer_params.layer = b_view_layer.name();
-    buffer_params.view = b_rview_name;
+    int num_views = 0;
+    for (b_rr.views.begin(b_view_iter); b_view_iter != b_rr.views.end(); ++b_view_iter) {
+      num_views++;
+    }
 
-    /* set the current view */
-    b_engine.active_view_set(b_rview_name.c_str());
+    int view_index = 0;
+    for (b_rr.views.begin(b_view_iter); b_view_iter != b_rr.views.end(); ++b_view_iter, ++view_index)
+    {
+      b_rview_name = b_view_iter->name();
 
-    /* Force update in this case, since the camera transform on each frame changes
+      buffer_params.layer = b_view_layer.name();
+      buffer_params.view = b_rview_name;
+
+      /* set the current view */
+      b_engine.active_view_set(b_rview_name.c_str());
+
+      /* Force update in this case, since the camera transform on each frame changes
      * in different views. This could be optimized by somehow storing the animated
      * camera transforms separate from the fixed stereo transform. */
-    if ((scene->need_motion() != Scene::MOTION_NONE) && view_index > 0) {
-      sync->tag_update();
-    }
+      if ((scene->need_motion() != Scene::MOTION_NONE) && view_index > 0) {
+        sync->tag_update();
+      }
 
-    /* update scene */
-    BL::Object b_camera_override(b_engine.camera_override());
-    sync->sync_camera(b_render, b_camera_override, width, height, b_rview_name.c_str());
-    sync->sync_data(
-        b_render, b_depsgraph, b_v3d, b_camera_override, width, height, &python_thread_state);
-    builtin_images_load();
+      /* update scene */
+      BL::Object b_camera_override(b_engine.camera_override());
+      sync->sync_camera(b_render, b_camera_override, width, height, b_rview_name.c_str());
+      sync->sync_data(
+            b_render, b_depsgraph, b_v3d, b_camera_override, width, height, &python_thread_state);
+      builtin_images_load();
 
-    /* Attempt to free all data which is held by Blender side, since at this
+      /* Attempt to free all data which is held by Blender side, since at this
      * point we know that we've got everything to render current view layer.
      */
-    /* At the moment we only free if we are not doing multi-view
+      /* At the moment we only free if we are not doing multi-view
      * (or if we are rendering the last view). See #58142/D4239 for discussion.
      */
-    if (view_index == num_views - 1) {
-      free_blender_memory_if_possible();
-    }
+      if (view_index == num_views - 1) {
+        free_blender_memory_if_possible();
+      }
 
-    /* Make sure all views have different noise patterns. - hardcoded value just to make it random
+      /* Make sure all views have different noise patterns. - hardcoded value just to make it random
      */
-    if (view_index != 0) {
-      int seed = scene->integrator->get_seed();
-      seed += hash_uint2(seed, hash_uint2(view_index * 0xdeadbeef, 0));
-      scene->integrator->set_seed(seed);
+      if (view_index != 0) {
+        int seed = scene->integrator->get_seed();
+        seed += hash_uint2(seed, hash_uint2(view_index * 0xdeadbeef, 0));
+        scene->integrator->set_seed(seed);
+      }
+
+      /* Update number of samples per layer. */
+      const int samples = sync->get_layer_samples();
+      const bool bound_samples = sync->get_layer_bound_samples();
+
+      SessionParams effective_session_params = session_params;
+      if (samples != 0 && (!bound_samples || (samples < session_params.samples))) {
+        effective_session_params.samples = samples;
+      }
+
+      /* Update session itself. */
+      session->reset(effective_session_params, buffer_params);
+
+      /* render */
+      if (!b_engine.is_preview() && background && print_render_stats) {
+        scene->enable_update_stats();
+      }
+
+
+      session->start();
+      session->wait();
+
+      if (!b_engine.is_preview() && background && print_render_stats) {
+        RenderStats stats;
+        session->collect_statistics(&stats);
+        printf("Render statistics:\n%s\n", stats.full_report().c_str());
+      }
+
+      if (session->progress.get_cancel())
+        break;
     }
 
-    /* Update number of samples per layer. */
-    const int samples = sync->get_layer_samples();
-    const bool bound_samples = sync->get_layer_bound_samples();
+    /* add metadata */
+    stamp_view_layer_metadata(scene, b_rlay_name);
 
-    SessionParams effective_session_params = session_params;
-    if (samples != 0 && (!bound_samples || (samples < session_params.samples))) {
-      effective_session_params.samples = samples;
-    }
+    /* free result without merging */
+    b_engine.end_result(b_rr, true, false, false);
 
-    /* Update session itself. */
-    session->reset(effective_session_params, buffer_params);
-
-    /* render */
-    if (!b_engine.is_preview() && background && print_render_stats) {
-      scene->enable_update_stats();
-    }
-
-    //ABLINOV_DEV start render in thread
-    session->start();
-#ifdef ABLINOV_DEV //before wait to start other render session
-    render_thread_started();
-#endif
-    session->wait();
-
-    if (!b_engine.is_preview() && background && print_render_stats) {
-      RenderStats stats;
-      session->collect_statistics(&stats);
-      printf("Render statistics:\n%s\n", stats.full_report().c_str());
-    }
-
-    if (session->progress.get_cancel())
-      break;
-  }
-
-  /* add metadata */
-  stamp_view_layer_metadata(scene, b_rlay_name);
-
-  /* free result without merging */
-  b_engine.end_result(b_rr, true, false, false);
-
-  /* When tiled rendering is used there will be no "write" done for the tile. Forcefully clear
+    /* When tiled rendering is used there will be no "write" done for the tile. Forcefully clear
    * highlighted tiles now, so that the highlight will be removed while processing full frame from
    * file. */
-  b_engine.tile_highlight_clear_all();
+    b_engine.tile_highlight_clear_all();
 
-  double total_time, render_time;
-  session->progress.get_time(total_time, render_time);
-  VLOG_INFO << "Total render time: " << total_time;
-  VLOG_INFO << "Render time (without synchronization): " << render_time;
+    double total_time, render_time;
+    session->progress.get_time(total_time, render_time);
+    VLOG_INFO << "Total render time: " << total_time;
+    VLOG_INFO << "Render time (without synchronization): " << render_time;
+  };
+
+  if(maybe_one_more_render) //ABLINOV ask for another task to render
+  {
+    static OMI_render_manager orc;
+
+    fmt::print("ABLINOV: b_scene.name(): {}\n",b_scene.name());
+    fmt::print("ABLINOV: b_scene.name_full(): {}\n",b_scene.name_full());
+    if(b_scene.name() != "ImageBackground"){
+
+      static const std::map<std::string,std::string> render_outputs = {
+        {"ShadowPass",  "D:/omi/scene_builder3_workdir/primaryImage.png.shadowPassIntermediate.exr"},
+        {"Primary",     "D:/omi/scene_builder3_workdir/primaryImage.png.primaryIntermediate.exr"}
+      };
+
+      // setting headless display for incremental render output
+      unique_ptr<BlenderDisplayDriverHeadless> display_driver =
+          make_unique<BlenderDisplayDriverHeadless>(&orc, render_outputs.find(b_scene.name())->second);
+      session->set_display_driver(std::move(display_driver));
+
+      // set headless flag to false when headless display is used
+      // we set special headless display to get intermediate render
+      // thus we need set headless to false. Othewise in the render pipeline
+      // calls to update display will not be activated
+      session->params.headless = false;
+      session->forceHeadless(false);
+
+      // not sure I understand this option... ??
+      // However there is some suggested description below:
+      // This option also set earlier in the
+      // activating flag to run preview for headless display same as:
+      //
+      // RenderEngine re; re->flag |= RE_ENGINE_PREVIEW;
+      //
+      // This is used to speedup display update to show incremental render results.
+      // in background mode we attach headless display and we set update
+      // flag. In theory this flag should inform render engine to increase performance
+      // for rendering and reduce qualtiy. In fact I did not found it is used by by cycle engine.
+      // but it can be used by blender while preparing different structures for cycle.
+      b_engine.is_preview(true);
+
+      orc.startTask(task);
+      maybe_one_more_render(true);
+      orc.waitForFinalCleanUp();
+    }
+    else{
+      task();
+      if( orc.isAllRenderFinished() ){
+        maybe_one_more_render(false);
+      }
+    }
+  }
+  else {
+    // usual render (not incremental)
+    task();
+  }
 }
 
 void BlenderSession::render_frame_finish()
@@ -1089,13 +1146,6 @@ void BlenderSession::ensure_display_driver_if_needed()
 
   if (headless) {
     /* No display needed for headless. */
-#ifdef ABLINOV_DEV // setting headless display
-    // setting headless display for incremental render output
-    unique_ptr<BlenderDisplayDriverHeadless> display_driver =
-        make_unique<BlenderDisplayDriverHeadless>();
-    session->set_display_driver(std::move(display_driver));
-    //b_engine.is_preview(true);
-#endif
     return;
   }
 

@@ -155,6 +155,9 @@ class Session {
    * via the write callback. */
   void process_full_buffer_from_disk(string_view filename);
 
+  //ABLINOV extra fuctionality to force update render in background render
+  void forceHeadless(bool value);
+
  protected:
   struct DelayedReset {
     thread_mutex mutex;
