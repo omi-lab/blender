@@ -41,6 +41,7 @@
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_screen.h"
+#include "BKE_omi_extension.h"
 
 #include "NOD_composite.h"
 
@@ -298,30 +299,18 @@ static void screen_render_single_layer_set(
   }
 }
 
+//ABLINOV: RenderSceneIterator
 int screen_render_exec_aux(bContext *C, wmOperator *op, Scene* scene);
 
 namespace {
-struct {
+struct RenderSceneIterator{
 
-  char const* render_layers[3] = {
-    "SCShadowPass",
-    "SCPrimary",
-    nullptr
-  };
-
-  int counter = 1;
-  bContext *C= nullptr;
-  wmOperator *op = nullptr;
-
-  void reset(bContext *C_, wmOperator *op_)
-  {
-    C = C_;  op = op_;  counter = 0; stopRenderFlag = false;
-  }
+  void reset(bContext *C_, wmOperator *op_);
 
   int run_render()
   {
     Main *mainp = CTX_data_main(C);
-    while(const auto* sceneName = render_layers[counter++]){
+    while(const auto* sceneName = render_layers[layerCounter++]){
       LISTBASE_FOREACH (Scene *, scene_iter, &mainp->scenes) {
         if(STREQ(scene_iter->id.name, sceneName)){
           return screen_render_exec_aux(C, op, scene_iter);
@@ -358,7 +347,8 @@ struct {
         if(STREQ(scene_iter->id.name, sceneName)) {
           while( !stopRenderFlag ){
             image_update();
-            screen_render_exec_aux(C, op, scene_iter);            
+            screen_render_exec_aux(C, op, scene_iter);
+            notify_ctx->callback(notify_ctx);
           }
           break;
         }
@@ -367,34 +357,73 @@ struct {
 
     return OPERATOR_FINISHED;
   }
+
+  bool isPythonNotificationSet()
+  {
+    return notify_ctx != nullptr;
+  }
+
 private:
+  char const* render_layers[3] = {
+    "SCShadowPass",
+    "SCPrimary",
+    nullptr
+  };
+
+  int layerCounter = 0;
+  bContext *C= nullptr;
+  wmOperator *op = nullptr;
+
+  PyNotify_OmiContext* notify_ctx = nullptr;
   bool stopRenderFlag = false;
 }
-
 renderSceneIterator;
+
+void RenderSceneIterator::reset(bContext *C_, wmOperator *op_)
+{
+  C = C_;
+  op = op_;
+  layerCounter = 0;
+  stopRenderFlag = false;
+
+  char value[256]{""};
+  RNA_string_get(op->ptr, python_omi_arg_name() , value);
+
+  Main *bmain = CTX_data_main(C);
+
+  if (STREQ(value,"")) {
+    bmain->maybe_one_more_render = nullptr;
+    notify_ctx = nullptr;
+  }
+  else {
+    size_t bytes_processed;
+    notify_ctx = reinterpret_cast<PyNotify_OmiContext*>(std::stoull(value, &bytes_processed, 16));
+
+    bmain->maybe_one_more_render = [](bool continueFlag) {
+      if (continueFlag)
+        renderSceneIterator.run_render();
+      else
+        renderSceneIterator.setStopRender();
+    };
+  }
+}
+
 }
 
 /* executes blocking render */
-static int screen_render_exec(bContext *C, wmOperator *op)
+int screen_render_exec(bContext *C, wmOperator *op)
 {
-  Main* bmain = CTX_data_main(C);
+  // ABLINOV:  renderSceneIterator to prepare layers for async render if python callback set
+  renderSceneIterator.reset(C, op);
 
-#ifdef ABLINOV_DEV //renderSceneIterator to prepare layers for async render
-  bmain->maybe_one_more_render = [](bool continueFlag) {
-    if (continueFlag)
-      renderSceneIterator.run_render();
-    else
-      renderSceneIterator.setStopRender();
-  };
-
-  renderSceneIterator.reset(C,op);
-  return renderSceneIterator.run_render();
-#else // synchronous render as it was before
-  bmain->maybe_one_more_render = nullptr;
-  Scene *scene = CTX_data_scene(C);
-  CTX_data_scene_set(C,scene);
-  return screen_render_exec_aux(C, op, scene);
-#endif
+  if (renderSceneIterator.isPythonNotificationSet()) {
+    return renderSceneIterator.run_render();
+  }
+  else {  // synchronous render as it was before
+    Scene *scene = CTX_data_scene(C);
+    CTX_data_scene_set(C, scene);
+    return screen_render_exec_aux(C, op, scene);
+  }
 }
 
 int screen_render_exec_aux(bContext *C, wmOperator *op, Scene* scene )

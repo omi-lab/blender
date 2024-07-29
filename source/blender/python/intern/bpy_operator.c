@@ -41,6 +41,9 @@
 #include "BKE_context.h"
 #include "BKE_report.h"
 
+//ABLINOV extension for python notification
+#include "BKE_omi_extension.h"
+
 /* so operators called can spawn threads which acquire the GIL */
 #define BPY_RELEASE_GIL
 
@@ -202,6 +205,14 @@ static PyObject *pyop_call(PyObject *UNUSED(self), PyObject *args)
     return NULL;
   }
 
+  //ABLINOV create notification context
+  PyNotify_OmiContext notify_ctx;
+  init_notify_context(&notify_ctx, kw);
+
+  /* return operator_ret as a bpy enum */
+  //return pyrna_enum_bitfield_as_set(rna_enum_operator_return_items, OPERATOR_FINISHED);
+
+
   ot = WM_operatortype_find(opname, true);
 
   if (ot == NULL) {
@@ -298,17 +309,27 @@ static PyObject *pyop_call(PyObject *UNUSED(self), PyObject *args)
        * that updates a driver */
       /* NOTE: I have not seen any examples of code that does this
        * so it may not be officially supported but seems to work ok. */
-      {
-        PyThreadState *ts = PyEval_SaveThread();
+      {        
+        //ABLINOV: note PyThreadState now in the notfiy context
+        //PyThreadState* ts = PyEval_SaveThread();
+        notify_ctx.ts = PyEval_SaveThread();
 #endif
+
+        //ABLINOV: setting python notify context
+        set_notify_context(&notify_ctx, &ptr, ot);
 
         operator_ret = WM_operator_call_py(C, ot, context, &ptr, reports, is_undo);
 
 #ifdef BPY_RELEASE_GIL
         /* regain GIL */
-        PyEval_RestoreThread(ts);
+        //ABLINOV: note PyThreadState now in the notfiy context
+        //PyEval_RestoreThread(ts);
+        PyEval_RestoreThread(notify_ctx.ts);
       }
 #endif
+
+      //ABLINOV: setting python notify context
+      release_notify_context(&notify_ctx);
 
       error_val = BPy_reports_to_error(reports, PyExc_RuntimeError, false);
 

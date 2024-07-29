@@ -28,7 +28,7 @@ std::string write_buffer_to_image_file(half4 *buffer, int width, int height)
   static std::atomic<int> counter = 0;
   std::string filepath = fmt::format("d:/blender_output_test_{}.exr", counter++);
 
-#ifdef example_with_image_format
+#ifdef example_with_image_format //not in use but left for reference if needed in the future
 
   ImageFormatData imf;
   BKE_image_format_init(&imf, false /*render*/);

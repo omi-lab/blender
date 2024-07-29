@@ -54,6 +54,7 @@ set(SRC
   bpy_library_write.c
   bpy_msgbus.c
   bpy_operator.c
+  bpy_omi_extension.c
   bpy_operator_wrap.c
   bpy_path.c
   bpy_props.c

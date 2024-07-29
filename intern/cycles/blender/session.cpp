@@ -519,6 +519,7 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
     }
     else{
       task();
+      orc.waitForChanges();
       if( orc.isAllRenderFinished() ){
         maybe_one_more_render(false);
       }
