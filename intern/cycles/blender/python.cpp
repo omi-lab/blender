@@ -27,6 +27,7 @@
 
 #ifdef ABLINOV_DEV //extra header to setup call back
 #include "BKE_main.h"
+#include "BKE_omi_extension.h"
 #endif
 
 #include "GPU_state.h"
@@ -130,36 +131,12 @@ static PyObject *init_func(PyObject * /*self*/, PyObject *args)
   PyObject *path, *user_path;
   int headless;
 
-#ifdef ABLINOV_DEV //parsing parameters from python in scripts\addons\cycles\engine.py:49
-                   // D:\omi\blender_dev_36_build\Debug\bin\3.6\scripts\addons\cycles\engine.py:49
-  {
-    //ouput list of parameters from argumetns for debug
-    PyObject* it = PyObject_GetIter(args);
-    if(it){
-      while(PyObject* item = PyIter_Next(it)){
-        // if (PyUnicode_Check(item)) {
-        PyObject *str_obj = PyObject_Str(item);
-        if (str_obj != nullptr) {
-          const char *str = PyUnicode_AsUTF8(str_obj);
-          if (str != nullptr) {
-            fmt::print("ABlinov: Object: {}\n", str);
-          } else {
-            PyErr_Print();
-          }
-          Py_DECREF(str_obj);  // Decrease reference count for the string object
-        } else {
-          PyErr_Print();
-        }
-        // }
-        Py_DECREF(item);
-      }
-      Py_DECREF(it);
-    }
-  }
+#ifdef ABLINOV_DEV_OFF //parsing parameters from python in scripts\addons\cycles\engine.py:49
+                       // D:\omi\blender_dev_36_build\Debug\bin\3.6\scripts\addons\cycles\engine.py:49
+  output_python_arguments(args);
 #endif
 
-  PyObject *one_more_parameter;
-  if (!PyArg_ParseTuple(args, "OOiO", &path, &user_path, &headless, &one_more_parameter)) {
+  if (!PyArg_ParseTuple(args, "OOi", &path, &user_path, &headless)) {
     return nullptr;
   }
 
