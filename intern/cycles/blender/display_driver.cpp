@@ -10,7 +10,7 @@
 #include "RE_engine.h"
 
 #include "blender/display_driver.h"
-#ifdef ABLINOV_DEV // header display_driver.h
+#ifdef ABLINOV_DEV_OFF // header display_driver.h
 #include "blender/display_driver_headless.h"
 #endif
 #include "device/device.h"

@@ -29,6 +29,8 @@
 #include "BKE_node.hh"
 #include "BKE_report.h"
 #include "BKE_scene.h"
+//ABLINOV need access to incremental render callback
+#include "BKE_main.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_debug.h"
@@ -1116,7 +1118,8 @@ bool RE_engine_render(Render *re, bool do_all)
     engine->flag |= RE_ENGINE_PREVIEW;
   }
 
-  if(ABLINOV_DEV) {// activating preview flag to speed up incremental render for headless display
+  if(re->main->maybe_one_more_render) {
+    // ABLINOV activating preview flag to speed up incremental render for headless display
     // This is used to speedup display update to show incremental render results.
     // in background mode we attach headless display and we set update
     // flag. In theory this flag should inform render engine to increase performance

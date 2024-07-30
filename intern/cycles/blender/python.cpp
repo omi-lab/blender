@@ -25,10 +25,9 @@
 #include "util/tbb.h"
 #include "util/types.h"
 
-#ifdef ABLINOV_DEV //extra header to setup call back
+//ABLINOV extra header to setup call back
 #include "BKE_main.h"
 #include "BKE_omi_extension.h"
-#endif
 
 #include "GPU_state.h"
 
@@ -364,13 +363,8 @@ static PyObject *reset_func(PyObject * /*self*/, PyObject *args)
 
   BlenderSession *session = (BlenderSession *)PyLong_AsVoidPtr(pysession);
 
-#ifdef ABLINOV_DEV //calling back: pydata->render_thread_started()
-  // session->render_thread_started = [pydata=(Main *)PyLong_AsVoidPtr(pydata)](){
-  //   pydata->maybe_one_more_render();
-  // };
+  //ABLINOV calling back: pydata->render_thread_started()
   session->maybe_one_more_render = ((Main *)PyLong_AsVoidPtr(pydata))->maybe_one_more_render;
-
-#endif
 
   PointerRNA dataptr;
   RNA_main_pointer_create((Main *)PyLong_AsVoidPtr(pydata), &dataptr);

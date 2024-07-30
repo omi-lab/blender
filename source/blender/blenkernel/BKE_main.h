@@ -245,9 +245,9 @@ typedef struct Main {
 
   struct MainLock *lock;
 
-#ifdef ABLINOV_DEV // call back to controll async render start from python side
+  // ABLINOV call back to controll async render start from python side
   void (*maybe_one_more_render)(bool continueFlag);
-#endif
+
 } Main;
 
 /**

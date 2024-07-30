@@ -49,9 +49,8 @@ class BlenderSession {
 
   /* offline render */
   void render(BL::Depsgraph &b_depsgraph);
-#ifdef ABLINOV_DEV //call back to search and collect another parallel render job
+  // ABLINOV: call back to search and collect another parallel render job
   std::function<void(bool stopFlag)> maybe_one_more_render{[](bool){}};
-#endif
 
   void render_frame_finish();
 

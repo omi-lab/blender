@@ -1768,12 +1768,11 @@ void RE_RenderFrame(Render *re,
 
   /* Ugly global still...
    * is to prevent preview events and signal subdivision-surface etc to make full resolution. */
-#ifdef ABLINOV_DEV // using G.is_rendering with counter
+  //ABLINOV: using G.is_rendering with counter (in case multiple renders in parallel is running)
   static int counter = 0;
   G.is_rendering = bool(++counter);
-#else
-  G.is_rendering = true;
-#endif
+  //this line was before:
+  // G.is_rendering = true;
 
   scene->r.cfra = frame;
   scene->r.subframe = subframe;
@@ -1826,12 +1825,12 @@ void RE_RenderFrame(Render *re,
 
   render_pipeline_free(re);
 
-#ifdef ABLINOV_DEV // using G.is_rendering with counter
-  G.is_rendering = bool(--counter);
-#else
   /* UGLY WARNING */
-  G.is_rendering = false;
-#endif
+  //ABLINOV: using "G.is_rendering with" counter (in case multiple renders in parallel is running)
+  G.is_rendering = bool(--counter);
+  // this line was before
+  //G.is_rendering = false;
+
 }
 
 #ifdef WITH_FREESTYLE

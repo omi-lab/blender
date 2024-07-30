@@ -30,9 +30,7 @@
 #include "util/time.h"
 
 #include "blender/display_driver.h"
-#ifdef ABLINOV_DEV // extra header for display_driver_headless.h
-#include "blender/display_driver_headless.h"
-#endif
+#include "blender/display_driver_headless.h" //ABLINOV: extra header
 #include "blender/output_driver.h"
 #include "blender/session.h"
 #include "blender/sync.h"
