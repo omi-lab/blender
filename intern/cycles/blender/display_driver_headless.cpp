@@ -13,6 +13,7 @@
 
 #include <OpenImageIO/detail/fmt.h>
 #include <filesystem>
+#include <system_error>
 
 
 CCL_NAMESPACE_BEGIN
@@ -108,10 +109,10 @@ BlenderDisplayDriverHeadless::update_end() {
   std::error_code err;
   do{
     std::filesystem::rename(file_from, output_path, err);
-    if(err.value() != NO_ERROR){
+    if(err){
       fmt::print(stderr, "ABlinov: rename error: {}", err.message());
     }
-  }while(err.value() != NO_ERROR);
+  }while(err);
   orc->notifyAboutChanges();
 }
 
