@@ -5,6 +5,8 @@
 #include "session/display_driver.h"
 
 #include <mutex>
+#include <condition_variable>
+#include <atomic>
 #include <vector>
 #include <functional>
 #include <thread>
