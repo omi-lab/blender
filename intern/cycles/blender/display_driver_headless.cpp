@@ -10,6 +10,7 @@
 
 #include "../imbuf/IMB_imbuf.h"
 #include "../imbuf/IMB_imbuf_types.h"
+#include "util/path.h"
 
 #include <OpenImageIO/detail/fmt.h>
 #include <filesystem>
@@ -24,10 +25,11 @@ CCL_NAMESPACE_BEGIN
 
 #define example_with_image_format_off
 
-std::string write_buffer_to_image_file(half4 *buffer, int width, int height)
+std::string write_buffer_to_image_file(const std::string& output_dir, half4 *buffer, int width, int height)
 {
   static std::atomic<int> counter = 0;
   std::string filepath = fmt::format("blender_output_test_{}.exr", counter++);
+  filepath = path_join(output_dir, filepath);
 
 #ifdef example_with_image_format //not in use but left for reference if needed in the future
 
@@ -79,7 +81,8 @@ std::string write_buffer_to_image_file(half4 *buffer, int width, int height)
 }
 
 BlenderDisplayDriverHeadless::BlenderDisplayDriverHeadless(OMI_render_manager* orc_, const std::string &output_path_)
-  :output_path{output_path_}
+  : output_path{output_path_}
+  , output_dir{path_dirname(output_path_)}
   , orc{orc_}
 {
   std::remove(output_path.c_str());
@@ -105,7 +108,7 @@ BlenderDisplayDriverHeadless::update_end() {
 #ifdef ABLINOV_DEV_OFF // test output
   fmt::print(stderr, "ABlinov: update_end()");
 #endif
-  auto file_from = write_buffer_to_image_file(buffer.data(), width_, height_);
+  auto file_from = write_buffer_to_image_file(output_dir, buffer.data(), width_, height_);
   std::error_code err;
   do{
     std::filesystem::rename(file_from, output_path, err);

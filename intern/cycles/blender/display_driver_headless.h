@@ -43,6 +43,7 @@ private:
   std::vector<half4> buffer;
   size_t width_, height_;
   std::string output_path;
+  std::string output_dir;
   OMI_render_manager* const orc = nullptr;
 };
 

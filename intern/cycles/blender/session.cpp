@@ -480,18 +480,12 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
     fmt::print("ABLINOV: b_scene.name_full(): {}\n",b_scene.name_full());
     if(b_scene.name() != "ImageBackground"){
 
-      // static const std::map<std::string,std::string> render_outputs = {
-      //   {"ShadowPass",  "D:/omi/scene_builder3_workdir/primaryImage.png.shadowPassIntermediate.exr"},
-      //   {"Primary",     "D:/omi/scene_builder3_workdir/primaryImage.png.primaryIntermediate.exr"}
-      // };
-
-
-      auto file = b_render.filepath();
 
       // setting headless display for incremental render output
+      auto file = b_render.filepath();
       unique_ptr<BlenderDisplayDriverHeadless> display_driver =
-          //make_unique<BlenderDisplayDriverHeadless>(&orc, render_outputs.find(b_scene.name())->second);
           make_unique<BlenderDisplayDriverHeadless>(&orc, file);
+
       session->set_display_driver(std::move(display_driver));
 
       // set headless flag to false when headless display is used
