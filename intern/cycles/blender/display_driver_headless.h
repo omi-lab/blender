@@ -14,7 +14,7 @@
 
 CCL_NAMESPACE_BEGIN
 
-std::string write_buffer_to_image_file(half4 *buffer, int width, int height);
+std::string write_buffer_to_image_file(const std::string& output_dir, half4 *buffer, int width, int height);
 
 class OMI_render_manager;
 
