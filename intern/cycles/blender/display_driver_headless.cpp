@@ -110,7 +110,9 @@ BlenderDisplayDriverHeadless::update_end() {
   do{
     std::filesystem::rename(file_from, output_path, err);
     if(err){
-      fmt::print(stderr, "ABlinov: rename error: {}", err.message());
+      fmt::print(stderr, "ABlinov: rename error: {}\n", err.message());
+      fmt::print(stderr, "ABlinov: output path:  {}\n", output_path);
+      fmt::print(stderr, "ABlinov: input path:   {}\n", file_from);
     }
   }while(err);
   orc->notifyAboutChanges();
