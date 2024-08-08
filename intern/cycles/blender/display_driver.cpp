@@ -587,7 +587,7 @@ void BlenderDisplayDriver::update_end()
     auto params = graphics_interop_get();
     if(false && params.buffer_height && params.buffer_width) {
       auto *buffer = map_texture_buffer();
-      write_buffer_to_image_file(buffer, params.buffer_width, params.buffer_height);
+      write_buffer_to_image_file("", buffer, params.buffer_width, params.buffer_height);
       unmap_texture_buffer();
     }
   }
