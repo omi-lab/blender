@@ -307,8 +307,15 @@ struct RenderSceneIterator{
 
   void reset(bContext *C_, wmOperator *op_);
 
-  int run_render()
+  int run_render(int finalCombinePass)
   {
+    if(finalCombinePass == 1)
+      return run_final_render();
+
+    if(render_layers[layerCounter] == nullptr){
+      return 0;
+    }
+
     Main *mainp = CTX_data_main(C);
     while(const auto* sceneName = render_layers[layerCounter++]){
       LISTBASE_FOREACH (Scene *, scene_iter, &mainp->scenes) {
@@ -318,13 +325,7 @@ struct RenderSceneIterator{
       }
     }
 
-    //background render started, now running final render
-    return run_final_render();
-  }
-
-  void setStopRender()
-  {
-    stopRenderFlag = true;
+    return 0;
   }
 
   int run_final_render()
@@ -345,11 +346,9 @@ struct RenderSceneIterator{
       const auto* sceneName = "SCImageBackground";
       LISTBASE_FOREACH (Scene *, scene_iter, &mainp->scenes) {
         if(STREQ(scene_iter->id.name, sceneName)) {
-          while( !stopRenderFlag ){
-            image_update();
-            screen_render_exec_aux(C, op, scene_iter);
-            notify_ctx->callback(notify_ctx);
-          }
+          image_update();
+          screen_render_exec_aux(C, op, scene_iter);
+          notify_ctx->callback(notify_ctx);
           break;
         }
       }
@@ -375,7 +374,6 @@ private:
   wmOperator *op = nullptr;
 
   PyNotify_OmiContext* notify_ctx = nullptr;
-  bool stopRenderFlag = false;
 }
 renderSceneIterator;
 
@@ -384,7 +382,6 @@ void RenderSceneIterator::reset(bContext *C_, wmOperator *op_)
   C = C_;
   op = op_;
   layerCounter = 0;
-  stopRenderFlag = false;
 
   char value[256]{""};
   RNA_string_get(op->ptr, python_omi_arg_name() , value);
@@ -392,18 +389,15 @@ void RenderSceneIterator::reset(bContext *C_, wmOperator *op_)
   Main *bmain = CTX_data_main(C);
 
   if (STREQ(value,"")) {
-    bmain->maybe_one_more_render = nullptr;
+    bmain->try_run_more_render = nullptr;
     notify_ctx = nullptr;
   }
   else {
     size_t bytes_processed;
     notify_ctx = reinterpret_cast<PyNotify_OmiContext*>(std::stoull(value, &bytes_processed, 16));
 
-    bmain->maybe_one_more_render = [](bool continueFlag) {
-      if (continueFlag)
-        renderSceneIterator.run_render();
-      else
-        renderSceneIterator.setStopRender();
+    bmain->try_run_more_render = [](bool finalCombinePass){
+      renderSceneIterator.run_render(finalCombinePass);
     };
   }
 }
@@ -417,7 +411,7 @@ int screen_render_exec(bContext *C, wmOperator *op)
   renderSceneIterator.reset(C, op);
 
   if (renderSceneIterator.isPythonNotificationSet()) {
-    return renderSceneIterator.run_render();
+    return renderSceneIterator.run_render(false);
   }
   else {  // synchronous render as it was before
     Scene *scene = CTX_data_scene(C);

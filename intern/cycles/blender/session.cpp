@@ -472,14 +472,14 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
     VLOG_INFO << "Render time (without synchronization): " << render_time;
   };
 
-  if(maybe_one_more_render) //ABLINOV ask for another task to render
+  if(try_run_more_render) //ABLINOV ask for another task to render
   {
     static OMI_render_manager orc;
 
     fmt::print("ABLINOV: b_scene.name(): {}\n",b_scene.name());
     fmt::print("ABLINOV: b_scene.name_full(): {}\n",b_scene.name_full());
-    if(b_scene.name() != "ImageBackground"){
 
+    if(b_scene.name() != "ImageBackground"){
 
       // setting headless display for incremental render output
       auto file = b_render.filepath();
@@ -509,20 +509,34 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
       // but it can be used by blender while preparing different structures for cycle.
       b_engine.is_preview(true);
 
+      // starting task in background thread
       orc.startTask(task);
-      maybe_one_more_render(true);
+      // trying start new task in the background thread recursively
+      // if call returns then there is no more background tasks
+      try_run_more_render(false);
+
+      // looping over "ImageBackground" pass to collect intermediate and do postprocessing
+      do {
+        // waiting if any new render from background layers are ready to do postprocessing
+        orc.waitForChanges();
+        // run render as one level recursive call please nothe it will
+        // go over stack and hitting  task() call (about 7 lines below)
+        try_run_more_render(true);
+
+        // continue loop if not all render background tasks are finished
+      } while(!orc.isAllRenderFinished());
+
+      // wating thread completely finished to return from successive recursive calls
       orc.waitForFinalCleanUp();
+      // at that point exit from thread based background renders is started
     }
     else{
+      // render loop for "ImageBackground" pass
       task();
-      orc.waitForChanges();
-      if( orc.isAllRenderFinished() ){
-        maybe_one_more_render(false);
-      }
     }
   }
   else {
-    // usual render (not incremental)
+    // pass for usual non incremental render
     task();
   }
 }

@@ -364,7 +364,7 @@ static PyObject *reset_func(PyObject * /*self*/, PyObject *args)
   BlenderSession *session = (BlenderSession *)PyLong_AsVoidPtr(pysession);
 
   //ABLINOV calling back: pydata->render_thread_started()
-  session->maybe_one_more_render = ((Main *)PyLong_AsVoidPtr(pydata))->maybe_one_more_render;
+  session->try_run_more_render = ((Main *)PyLong_AsVoidPtr(pydata))->try_run_more_render;
 
   PointerRNA dataptr;
   RNA_main_pointer_create((Main *)PyLong_AsVoidPtr(pydata), &dataptr);

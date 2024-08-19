@@ -1118,7 +1118,7 @@ bool RE_engine_render(Render *re, bool do_all)
     engine->flag |= RE_ENGINE_PREVIEW;
   }
 
-  if(re->main->maybe_one_more_render) {
+  if(re->main->try_run_more_render) {
     // ABLINOV activating preview flag to speed up incremental render for headless display
     // This is used to speedup display update to show incremental render results.
     // in background mode we attach headless display and we set update
