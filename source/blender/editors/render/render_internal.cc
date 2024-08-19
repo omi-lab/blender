@@ -333,8 +333,8 @@ struct RenderSceneIterator{
 
     auto image_update =[&]() { LISTBASE_FOREACH (Image *, image_iter, &mainp->images) {
       std::cout << image_iter->filepath << std::endl;
-      if( std::strstr(image_iter->filepath, "primaryImage.png.primaryIntermediate.exr") ||
-          std::strstr(image_iter->filepath, "primaryImage.png.shadowPassIntermediate.exr") )
+      if( std::strstr(image_iter->filepath, ".PrimaryIntermediate.exr") ||
+          std::strstr(image_iter->filepath, ".ShadowPassIntermediate.exr") )
       {
         // newly generated images shall be reloaded
         BKE_image_signal(mainp, image_iter, nullptr, IMA_SIGNAL_RELOAD);
