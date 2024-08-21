@@ -460,8 +460,7 @@ static void print_version_short(void)
 #  ifdef BUILD_DATE
   /* NOTE: We include built time since sometimes we need to tell broken from
    * working built of the same hash. */
-  //ABLINOV adding OMI to report patched version
-  printf("Blender OMI %s (hash %s built %s %s)\n",
+  printf("Blender %s (hash %s built %s %s)\n",
          BKE_blender_version_string(),
          build_hash,
          build_date,

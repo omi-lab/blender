@@ -111,8 +111,9 @@ static void blender_version_init(void)
     BLI_assert_msg(0, "Invalid Blender version cycle");
   }
 
+  //ABLINOV adding OMI: to report patched version
   SNPRINTF(blender_version_string,
-           "%d.%01d.%d%s",
+           "%d.%01d.%d%s(OMI)",
            BLENDER_VERSION / 100,
            BLENDER_VERSION % 100,
            BLENDER_VERSION_PATCH,
