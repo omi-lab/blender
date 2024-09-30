@@ -1533,8 +1533,10 @@ endif()
 # -----------------------------------------------------------------------------
 # Setup link libraries
 
+find_library (BZIP2_LIBRARIES "bz2" REQUIRED)
+
 add_dependencies(blender makesdna)
-target_link_libraries(blender ${LIB})
+target_link_libraries(blender ${LIB} ${BZIP2_LIBRARIES})
 unset(LIB)
 
 setup_platform_linker_flags(blender)
