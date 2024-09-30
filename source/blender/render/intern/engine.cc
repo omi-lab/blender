@@ -1119,13 +1119,12 @@ bool RE_engine_render(Render *re, bool do_all)
   }
 
   if(re->main->try_run_more_render) {
-    // ABLINOV activating preview flag to speed up incremental render for headless display
     // This is used to speedup display update to show incremental render results.
     // in background mode we attach headless display and we set update
-    // flag. In theory this flag should inform render engine to increase performance
-    // for rendering and reduce qualtiy. In fact I did not found it is used by by cycle engine.
-    // but it can be used by blender while preparing different structures for cycle
-    engine->flag |= RE_ENGINE_PREVIEW;
+    // flag. In this flag should inform render engine to increase performance
+    // for rendering and reduce qualtiy. In fact It does use twice memory on linux.
+    // Thus we kept it switched off.
+    // engine->flag |= RE_ENGINE_PREVIEW;
   }
   engine->camera_override = re->camera_override;
 

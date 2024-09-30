@@ -504,10 +504,10 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
       //
       // This is used to speedup display update to show incremental render results.
       // in background mode we attach headless display and we set update
-      // flag. In theory this flag should inform render engine to increase performance
-      // for rendering and reduce qualtiy. In fact I did not found it is used by by cycle engine.
-      // but it can be used by blender while preparing different structures for cycle.
-      b_engine.is_preview(true);
+      // flag. In this flag should inform render engine to increase performance
+      // for rendering and reduce qualtiy. In fact It does use twice memory on linux.
+      // Thus we keep it switched off.
+      // b_engine.is_preview(true);
 
       // starting task in background thread
       orc.startTask(task);
