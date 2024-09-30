@@ -50,7 +50,7 @@ class BlenderSession {
   /* offline render */
   void render(BL::Depsgraph &b_depsgraph);
   // ABLINOV: call back to search and collect another parallel render job
-  std::function<void(bool finalCombinePass)> try_run_more_render{nullptr};
+  std::function<int(bool finalCombinePass)> try_run_more_render{nullptr};
 
   void render_frame_finish();
 

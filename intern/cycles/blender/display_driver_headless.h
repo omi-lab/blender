@@ -49,14 +49,16 @@ private:
 
 class OMI_render_manager{
 public:
-  void startTask(std::function<void()> job);
+  void startTask(std::function<void()> job, std::function<void()> cancelJob);
   void run();
+  void cancelJobs();
   void waitForChanges();
   bool isAllRenderFinished();
   void waitForFinalCleanUp();
   void notifyAboutChanges();
 private:
   std::vector<std::thread> workers;
+  std::vector<std::function<void()> > jobCancelRequests;
   std::mutex cv_m;
   std::condition_variable cv;
   int changes_counter{0};

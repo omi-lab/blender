@@ -20,7 +20,7 @@ typedef struct wmOperatorType wmOperatorType;
 typedef struct PointerRNA PointerRNA;
 
 struct PyNotify_OmiContext{
-  void (*callback)(struct PyNotify_OmiContext *);
+  int (*callback)(struct PyNotify_OmiContext *);
   PyObject *omi_callback;
   PyThreadState *ts;
 };
@@ -29,7 +29,7 @@ typedef struct PyNotify_OmiContext PyNotify_OmiContext;
 
 const char* python_omi_arg_name();
 
-void omi_pycallback(struct PyNotify_OmiContext* self);
+int omi_pycallback(struct PyNotify_OmiContext* self);
 
 void init_notify_context(struct PyNotify_OmiContext* self, PyObject *kw);
 

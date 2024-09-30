@@ -348,13 +348,13 @@ struct RenderSceneIterator{
         if(STREQ(scene_iter->id.name, sceneName)) {
           image_update();
           screen_render_exec_aux(C, op, scene_iter);
-          notify_ctx->callback(notify_ctx);
-          break;
+          // we pass return from python incremental callback further
+          return notify_ctx->callback(notify_ctx);
         }
       }
     }
 
-    return OPERATOR_FINISHED;
+    return 0;
   }
 
   bool isPythonNotificationSet()
@@ -396,8 +396,8 @@ void RenderSceneIterator::reset(bContext *C_, wmOperator *op_)
     size_t bytes_processed;
     notify_ctx = reinterpret_cast<PyNotify_OmiContext*>(std::stoull(value, &bytes_processed, 16));
 
-    bmain->try_run_more_render = [](bool finalCombinePass){
-      renderSceneIterator.run_render(finalCombinePass);
+    bmain->try_run_more_render = [](bool finalCombinePass) -> int{
+      return renderSceneIterator.run_render(finalCombinePass);
     };
   }
 }

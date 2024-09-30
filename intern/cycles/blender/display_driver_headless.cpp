@@ -149,7 +149,7 @@ void BlenderDisplayDriverHeadless::draw(const Params &/*params*/) {}
 
 // OMI_render_manager
 //###################################################################
-void OMI_render_manager::startTask(std::function<void()> job)
+void OMI_render_manager::startTask(std::function<void()> job, std::function<void ()> cancelJob)
 {
   {
     std::unique_lock<std::mutex> lk(cv_m);
@@ -165,6 +165,13 @@ void OMI_render_manager::startTask(std::function<void()> job)
     }
     cv.notify_all();
   });
+  jobCancelRequests.emplace_back(cancelJob);
+}
+
+void OMI_render_manager::cancelJobs()
+{
+  for(auto& cancel: jobCancelRequests)
+    cancel();
 }
 
 void OMI_render_manager::notifyAboutChanges()
@@ -193,6 +200,7 @@ void OMI_render_manager::waitForFinalCleanUp()
   for(auto& thread : workers)
     thread.join();
   workers.clear();
+  jobCancelRequests.clear();
 }
 
 

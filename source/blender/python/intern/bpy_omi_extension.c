@@ -6,16 +6,18 @@
 
 #include "Python.h"
 
+//ABLINOV: set of omi specific parameters for python
 
 const char* python_omi_arg_name()
 {
   return "feed_back_incremental_render";
 }
 
-void omi_pycallback(struct PyNotify_OmiContext* self)
+int omi_pycallback(struct PyNotify_OmiContext* self)
 {
   PyEval_RestoreThread(self->ts);
   PyObject* result = PyObject_CallNoArgs(self->omi_callback);
+  int ret_value = 0;
   if(result == NULL){
     PyErr_Print();
 #ifdef _MSC_VER
@@ -28,9 +30,12 @@ void omi_pycallback(struct PyNotify_OmiContext* self)
     abort();
     PyErr_Clear(); // clear error if it is happen
   }
-  else
+  else {
+    ret_value = PyLong_Check(result)? PyLong_AsLong(result):0;
     Py_DECREF(result);
+  }
   self->ts = PyEval_SaveThread();
+  return ret_value;
 }
 
 void init_notify_context(struct PyNotify_OmiContext* self, PyObject *kw)

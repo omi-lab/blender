@@ -1123,7 +1123,7 @@ bool RE_engine_render(Render *re, bool do_all)
     // in background mode we attach headless display and we set update
     // flag. In this flag should inform render engine to increase performance
     // for rendering and reduce qualtiy. In fact It does use twice memory on linux.
-    // Thus we kept it switched off.
+    // Thus we keep it switched off.
     // engine->flag |= RE_ENGINE_PREVIEW;
   }
   engine->camera_override = re->camera_override;
