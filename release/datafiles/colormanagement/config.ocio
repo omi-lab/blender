@@ -221,6 +221,21 @@ colorspaces:
             - !<ColorSpaceTransform> {src: Linear, dst: Filmic Log}
             - !<MatrixTransform> {matrix: [0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0, 0, 0, 1]}
             - !<FileTransform> {src: filmic_false_color.spi3d, interpolation: best}
+  
+  - !<ColorSpace>
+    name: Filmic sRGB Medium High Contrast
+    family:
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      sRGB display space with Filmic Medium High Contrast view transform
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<ColorSpaceTransform> {src: Linear, dst: Filmic Log}
+            - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear}
+            - !<FileTransform> {src: filmic_to_0-85_1-011.spi1d, interpolation: best}
+            - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear, direction: inverse}			
 looks:
   - !<Look>
     name: Very High Contrast
