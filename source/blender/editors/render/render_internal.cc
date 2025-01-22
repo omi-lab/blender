@@ -414,7 +414,8 @@ int screen_render_exec(bContext *C, wmOperator *op)
   renderSceneIterator.reset(C, op);
 
   if (renderSceneIterator.isPythonNotificationSet()) {
-    return renderSceneIterator.run_render(false);
+      renderSceneIterator.run_render(0);
+      return renderSceneIterator.run_final_render(2);
   }
   else {  // synchronous render as it was before
     Scene *scene = CTX_data_scene(C);
