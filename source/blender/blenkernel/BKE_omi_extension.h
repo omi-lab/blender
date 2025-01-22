@@ -42,5 +42,13 @@ void release_notify_context(struct PyNotify_OmiContext* self);
 void output_python_arguments(PyObject *args);
 
 #ifdef __cplusplus
+
+//ABLINOV omi extension render types to manage incremental extension
+enum OmiIncrementalRenderType{
+  RenderOnly=0,
+  CombineAndCallback=1,
+  CombineOnly=2
+};
+
 }
 #endif

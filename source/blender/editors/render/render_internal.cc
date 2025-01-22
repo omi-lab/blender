@@ -307,10 +307,10 @@ struct RenderSceneIterator{
 
   void reset(bContext *C_, wmOperator *op_);
 
-  int run_render(int finalCombinePass)
+  int run_render(int renderTypePass)
   {
-    if(finalCombinePass == 1)
-      return run_final_render(finalCombinePass);
+    if(renderTypePass == OmiIncrementalRenderType::CombineAndCallback)
+      return run_final_render(renderTypePass);
 
     if(render_layers[layerCounter] == nullptr){
       return 0;
@@ -328,7 +328,7 @@ struct RenderSceneIterator{
     return 0;
   }
 
-  int run_final_render(int finalCombinePass)
+  int run_final_render(int renderTypePass)
   {
     Main *mainp = CTX_data_main(C);
 
@@ -349,7 +349,7 @@ struct RenderSceneIterator{
           image_update();
           screen_render_exec_aux(C, op, scene_iter);
           // we pass return from python incremental callback further
-          if(finalCombinePass == 2)
+          if(renderTypePass == OmiIncrementalRenderType::CombineOnly)
             return 0;
           else
             return notify_ctx->callback(notify_ctx);
@@ -399,8 +399,8 @@ void RenderSceneIterator::reset(bContext *C_, wmOperator *op_)
     size_t bytes_processed;
     notify_ctx = reinterpret_cast<PyNotify_OmiContext*>(std::stoull(value, &bytes_processed, 16));
 
-    bmain->try_run_more_render = [](int finalCombinePass) -> int{
-      return renderSceneIterator.run_render(finalCombinePass);
+    bmain->try_run_more_render = [](int renderTypePass) -> int{
+      return renderSceneIterator.run_render(renderTypePass);
     };
   }
 }
@@ -414,8 +414,8 @@ int screen_render_exec(bContext *C, wmOperator *op)
   renderSceneIterator.reset(C, op);
 
   if (renderSceneIterator.isPythonNotificationSet()) {
-      renderSceneIterator.run_render(0);
-      return renderSceneIterator.run_final_render(2);
+      renderSceneIterator.run_render(OmiIncrementalRenderType::RenderOnly);
+      return renderSceneIterator.run_final_render(OmiIncrementalRenderType::CombineOnly);
   }
   else {  // synchronous render as it was before
     Scene *scene = CTX_data_scene(C);
