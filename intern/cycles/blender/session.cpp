@@ -35,6 +35,7 @@
 #include "blender/session.h"
 #include "blender/sync.h"
 #include "blender/util.h"
+#include "../../blender/blenkernel/BKE_omi_extension.h"
 
 CCL_NAMESPACE_BEGIN
 
@@ -513,7 +514,7 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
       orc.startTask(task, [this](){session->cancel();});
       // trying start new task in the background thread recursively
       // if call returns then there is no more background tasks
-      try_run_more_render(0);
+      try_run_more_render(OmiIncrementalRenderType::RenderOnly);
 
       // looping over "ImageBackground" pass to collect intermediate and do postprocessing
       do {
@@ -521,7 +522,7 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
         orc.waitForChanges();
         // run render as one level recursive call please nothe it will
         // go over stack and hitting  task() call (about 7 lines below)
-        int cancel_render = try_run_more_render(1);
+        int cancel_render = try_run_more_render(OmiIncrementalRenderType::CombineAndCallback);
         if(cancel_render) {
           fmt::print("Cancelling render received from incremental responce...\n");
           orc.cancelJobs();
@@ -529,9 +530,6 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
 
         // continue loop if not all render background tasks are finished
       } while(!orc.isAllRenderFinished());
-
-      // finalize last final render
-      // try_run_more_render(2);
 
       // wating thread completely finished to return from successive recursive calls
       orc.waitForFinalCleanUp();

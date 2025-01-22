@@ -246,7 +246,7 @@ typedef struct Main {
   struct MainLock *lock;
 
   // ABLINOV call back to controll async render start from python side
-  int (*try_run_more_render)(int finalCombinePass);
+  int (*try_run_more_render)(int renderTypePass);
 
 } Main;
 
