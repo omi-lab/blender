@@ -347,11 +347,12 @@ struct RenderSceneIterator{
       LISTBASE_FOREACH (Scene *, scene_iter, &mainp->scenes) {
         if(STREQ(scene_iter->id.name, sceneName)) {
           image_update();
-          if(finalCombinePass == 2)
-            return 0;
           screen_render_exec_aux(C, op, scene_iter);
           // we pass return from python incremental callback further
-          return notify_ctx->callback(notify_ctx);
+          if(finalCombinePass != 2)
+            return 0;
+          else
+            return notify_ctx->callback(notify_ctx);
         }
       }
     }
