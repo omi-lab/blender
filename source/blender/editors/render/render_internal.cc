@@ -310,7 +310,7 @@ struct RenderSceneIterator{
   int run_render(int finalCombinePass)
   {
     if(finalCombinePass == 1)
-      return run_final_render();
+      return run_final_render(finalCombinePass);
 
     if(render_layers[layerCounter] == nullptr){
       return 0;
@@ -328,7 +328,7 @@ struct RenderSceneIterator{
     return 0;
   }
 
-  int run_final_render()
+  int run_final_render(int finalCombinePass)
   {
     Main *mainp = CTX_data_main(C);
 
@@ -347,7 +347,8 @@ struct RenderSceneIterator{
       LISTBASE_FOREACH (Scene *, scene_iter, &mainp->scenes) {
         if(STREQ(scene_iter->id.name, sceneName)) {
           image_update();
-          screen_render_exec_aux(C, op, scene_iter);
+          if(finalCombinePass == 1)
+            screen_render_exec_aux(C, op, scene_iter);
           // we pass return from python incremental callback further
           return notify_ctx->callback(notify_ctx);
         }
@@ -396,7 +397,7 @@ void RenderSceneIterator::reset(bContext *C_, wmOperator *op_)
     size_t bytes_processed;
     notify_ctx = reinterpret_cast<PyNotify_OmiContext*>(std::stoull(value, &bytes_processed, 16));
 
-    bmain->try_run_more_render = [](bool finalCombinePass) -> int{
+    bmain->try_run_more_render = [](int finalCombinePass) -> int{
       return renderSceneIterator.run_render(finalCombinePass);
     };
   }
