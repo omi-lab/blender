@@ -530,6 +530,9 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
         // continue loop if not all render background tasks are finished
       } while(!orc.isAllRenderFinished());
 
+      // finalize last final render
+      try_run_more_render(true);
+
       // wating thread completely finished to return from successive recursive calls
       orc.waitForFinalCleanUp();
       // at that point exit from thread based background renders is started
