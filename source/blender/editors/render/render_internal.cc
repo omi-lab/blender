@@ -349,7 +349,7 @@ struct RenderSceneIterator{
           image_update();
           screen_render_exec_aux(C, op, scene_iter);
           // we pass return from python incremental callback further
-          if(finalCombinePass != 2)
+          if(finalCombinePass == 2)
             return 0;
           else
             return notify_ctx->callback(notify_ctx);
