@@ -513,7 +513,7 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
       orc.startTask(task, [this](){session->cancel();});
       // trying start new task in the background thread recursively
       // if call returns then there is no more background tasks
-      try_run_more_render(false);
+      try_run_more_render(0);
 
       // looping over "ImageBackground" pass to collect intermediate and do postprocessing
       do {
@@ -521,7 +521,7 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
         orc.waitForChanges();
         // run render as one level recursive call please nothe it will
         // go over stack and hitting  task() call (about 7 lines below)
-        int cancel_render = try_run_more_render(true);
+        int cancel_render = try_run_more_render(1);
         if(cancel_render) {
           fmt::print("Cancelling render received from incremental responce...\n");
           orc.cancelJobs();
@@ -531,7 +531,7 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
       } while(!orc.isAllRenderFinished());
 
       // finalize last final render
-      try_run_more_render(true);
+      try_run_more_render(2);
 
       // wating thread completely finished to return from successive recursive calls
       orc.waitForFinalCleanUp();
