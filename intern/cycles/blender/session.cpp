@@ -531,7 +531,7 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
       } while(!orc.isAllRenderFinished());
 
       // finalize last final render
-      try_run_more_render(2);
+      // try_run_more_render(2);
 
       // wating thread completely finished to return from successive recursive calls
       orc.waitForFinalCleanUp();
